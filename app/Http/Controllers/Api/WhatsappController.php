@@ -56,7 +56,7 @@ class WhatsappController extends Controller
     public function onMessage(Request $request)
     {
         $data = $request->all();
-
+    Log::alert($data);
         // Sécurité : vérifier si on a bien un message
         if (!isset($data['entry'][0]['changes'][0]['value']['messages'])) {
             return response()->json(['status' => 'no message received'], 200);
