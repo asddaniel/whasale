@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\PaymentController;
 // Webhook WhatsApp (Meta)
 Route::get('/whatsapp/webhook', [WhatsappController::class, 'verify']);
 Route::post('/whatsapp/webhook', [WhatsappController::class, 'onMessage']);
+Route::post('/whatsapp', [WhatsappController::class, 'onMessage']);
 // Webhook LomoPay (Le nom de la route doit correspondre à ce qui est envoyé dans LomoPayService)
 Route::post('/lomopay/webhook', [LomoPayWebhookController::class, 'handle'])->name('lomopay.webhook');
 
