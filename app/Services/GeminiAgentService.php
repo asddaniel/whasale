@@ -89,7 +89,7 @@ class GeminiAgentService
         );
 
         try {
-            $response = Gemini::generativeModel(model: 'gemini-1.5-flash')
+            $response = Gemini::generativeModel(model: 'gemini-2.5-flash')
                 ->withGenerationConfig($generationConfig)
                 ->generateContent($parts);
 
