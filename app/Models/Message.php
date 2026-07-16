@@ -16,6 +16,7 @@ class Message extends Model
         'type',
         'message',
         'data',
+        'media_path', // Nouvelle colonne pour stocker le lien local du fichier
     ];
 
     public function customer(): BelongsTo

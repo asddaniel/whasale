@@ -8,63 +8,75 @@ use Gemini\Data\GenerationConfig;
 use Gemini\Data\Schema;
 use Gemini\Enums\DataType;
 use Gemini\Enums\ResponseMimeType;
+use Gemini\Data\Blob;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
 class GeminiAgentService
 {
     /**
-     * Traite le message entrant et retourne une action structurée
+     * Traite le message entrant et génère l'action, ainsi que la description textuelle du média (si fourni)
      */
-    public function generateResponse(string $userMessage, array $chatHistory = []): array
+    public function generateResponse(string $userMessage, array $chatHistory = [], ?array $mediaData = null): array
     {
-        // 1. Récupération des documents (catalogue)
         $documents = Document::all(['id', 'title', 'price', 'currency', 'description']);
         $catalog = json_encode($documents->toArray());
 
-        // 2. Le Prompt Système (Directives)
-        $prompt = "Tu es un assistant virtuel commercial sur WhatsApp. Ton rôle est de vendre nos documents numériques (hébergés sur Google Drive).
+        $prompt = "Tu es un assistant virtuel commercial sur WhatsApp. Ton rôle est de vendre nos documents numériques.
 
         CATALOGUE DES DOCUMENTS DISPONIBLES :
         {$catalog}
 
         RÈGLES DE CONVERSATION :
-        1. Sois poli, concis et utilise des emojis (WhatsApp oblige).
-        2. Si le client veut acheter, tu DOIS lui demander son adresse e-mail (nécessaire pour le partage Google Drive).
-        3. Si le client a fourni son e-mail et choisi un document, passe l'action à 'INITIATE_PAYMENT'.
-        4. Si le client revient dire qu'il a payé, passe l'action à 'CHECK_PAYMENT'.
-        5. L'utilisateur actuel vient d'envoyer le message suivant. Analyse l'historique et son message pour déterminer la prochaine action.
+        1. Sois poli, concis et utilise des emojis.
+        2. Si un fichier MEDIA t'est transmis aujourd'hui, tu vas l'analyser. Si c'est un AUDIO, retranscris-le ou résume son intention. Si c'est une IMAGE ou un PDF, décris précisément son contenu textuel/visuel.
+        3. Si le client veut acheter, tu DOIS lui demander son adresse e-mail.
+        4. Si le client a fourni son e-mail et choisi un document, passe l'action à 'INITIATE_PAYMENT'.
+        5. Si le client revient dire qu'il a payé, passe l'action à 'CHECK_PAYMENT'.
         ";
 
-        // 3. Construction des parties d'historique pour l'API Gemini
+        // Construction du payload pour Gemini
         $parts = [];
-        $parts[] = ['text' => $prompt];
+        $parts[] = $prompt;
 
         foreach ($chatHistory as $history) {
-            // L'historique doit être re-formatté si nécessaire (dépend de la logique de ton contrôleur)
-            $parts[] = ['text' => "{$history['role']}: {$history['part']}"];
+            $parts[] = "{$history['role']}: {$history['part']}";
         }
-        $parts[] = ['text' => "user: {$userMessage}"];
 
-        // 4. Schéma de réponse JSON Strict
+        // Ajout du texte de l'utilisateur (ou légende)
+        $parts[] = "user: {$userMessage}";
+
+        // Si c'est un média, on l'attache à la requête IA (Uniquement la PREMIÈRE FOIS !)
+        if ($mediaData && isset($mediaData['bytes']) && isset($mediaData['mime_type'])) {
+            $parts[] = new Blob(
+                mimeType: $mediaData['mime_type'],
+                data: base64_encode($mediaData['bytes'])
+            );
+        }
+
+        // Schema JSON avec le fameux "Portrait Robot" optionnel
         $responseSchema = new Schema(
             type: DataType::OBJECT,
             properties: [
                 'reply_to_user_on_whatsapp' => new Schema(
                     type: DataType::STRING,
-                    description: "Le texte à envoyer au client sur WhatsApp."
+                    description: "Le texte de réponse à renvoyer au client sur WhatsApp."
                 ),
                 'next_action_type' => new Schema(
                     type: DataType::STRING,
-                    description: "Doit être l'une des valeurs: CONTINUE_CONVERSATION, INITIATE_PAYMENT, CHECK_PAYMENT"
+                    description: "Valeurs autorisées: CONTINUE_CONVERSATION, INITIATE_PAYMENT, CHECK_PAYMENT"
                 ),
                 'extracted_email' => new Schema(
                     type: DataType::STRING,
-                    description: "L'e-mail du client s'il l'a fourni dans la conversation. Sinon null."
+                    description: "L'e-mail du client s'il l'a fourni. Sinon null."
                 ),
                 'selected_document_id' => new Schema(
                     type: DataType::INTEGER,
-                    description: "L'ID du document choisi par le client (tiré du catalogue). Null s'il n'a pas encore choisi."
+                    description: "L'ID du document choisi par le client. Null s'il n'a pas encore choisi."
+                ),
+                'media_description' => new Schema(
+                    type: DataType::STRING,
+                    description: "OBLIGATOIRE SI et seulement si un fichier média a été transmis dans ce tour. Fournis un portrait robot textuel détaillé (transcription pour un vocal, description visuelle pour une photo, résumé pour un PDF). Null sinon."
                 ),
             ],
             required: ['reply_to_user_on_whatsapp', 'next_action_type']
@@ -73,14 +85,13 @@ class GeminiAgentService
         $generationConfig = new GenerationConfig(
             responseMimeType: ResponseMimeType::APPLICATION_JSON,
             responseSchema: $responseSchema,
-            temperature: 0.2 // Très faible pour éviter les hallucinations
+            temperature: 0.2
         );
 
         try {
-            // Appel à Gemini
             $response = Gemini::generativeModel(model: 'gemini-1.5-flash')
                 ->withGenerationConfig($generationConfig)
-                ->generateContent(implode("\n", array_column($parts, 'text'))); // Concaténation simple pour l'exemple
+                ->generateContent($parts);
 
             $generatedText = $response->text();
 
@@ -98,12 +109,12 @@ class GeminiAgentService
 
         } catch (Exception $e) {
             Log::error('Gemini Error: ' . $e->getMessage());
-            // Fallback de sécurité
             return [
-                'reply_to_user_on_whatsapp' => "Désolé, je rencontre un petit problème technique. Veuillez patienter ou reformuler.",
+                'reply_to_user_on_whatsapp' => "Désolé, je n'ai pas bien compris votre fichier ou votre vocal. Pouvez-vous me l'écrire s'il vous plaît ?",
                 'next_action_type' => 'CONTINUE_CONVERSATION',
                 'extracted_email' => null,
                 'selected_document_id' => null,
+                'media_description' => null,
             ];
         }
     }
