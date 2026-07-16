@@ -9,6 +9,7 @@ use Gemini\Data\Schema;
 use Gemini\Enums\DataType;
 use Gemini\Enums\ResponseMimeType;
 use Gemini\Data\Blob;
+use Gemini\Enums\MimeType; // <-- Importation essentielle de l'Enum
 use Illuminate\Support\Facades\Log;
 use Exception;
 
@@ -46,10 +47,34 @@ class GeminiAgentService
         // Ajout du texte de l'utilisateur (ou légende)
         $parts[] = "user: {$userMessage}";
 
-        // Si c'est un média, on l'attache à la requête IA (Uniquement la PREMIÈRE FOIS !)
+        // Si c'est un média, on l'attache à la requête IA (Uniquement la PREMIÈRE FOIS)
         if ($mediaData && isset($mediaData['bytes']) && isset($mediaData['mime_type'])) {
+
+            // Nettoyage de la chaîne MIME (ex: "audio/ogg; codecs=opus" devient "audio/ogg")
+            $cleanMime = trim(strtolower(explode(';', $mediaData['mime_type'])[0]));
+
+            // Tentative de résolution de l'Enum à partir de la valeur nettoyée
+            $mimeTypeEnum = MimeType::tryFrom($cleanMime);
+
+            // Gestion de fallbacks si l'Enum n'est pas directement mappé (SDK non mis à jour par exemple)
+            if (!$mimeTypeEnum) {
+                if (str_starts_with($cleanMime, 'image/')) {
+                    $mimeTypeEnum = MimeType::IMAGE_JPEG;
+                } elseif (str_starts_with($cleanMime, 'audio/')) {
+                    // Les versions du SDK exposent généralement les enums pour les formats standards
+                    $mimeTypeEnum = MimeType::tryFrom('audio/ogg') ?? MimeType::tryFrom('audio/mp3');
+                } elseif ($cleanMime === 'application/pdf') {
+                    $mimeTypeEnum = MimeType::APPLICATION_PDF;
+                }
+            }
+
+            // Fallback universel par précaution
+            if (!$mimeTypeEnum) {
+                $mimeTypeEnum = MimeType::IMAGE_JPEG;
+            }
+
             $parts[] = new Blob(
-                mimeType: $mediaData['mime_type'],
+                mimeType: $mimeTypeEnum, // Utilisation de l'instance de l'Enum MimeType
                 data: base64_encode($mediaData['bytes'])
             );
         }
