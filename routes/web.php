@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Web\PaymentController;
 use App\Http\Controllers\Admin\DocumentController;
-use App\http\Controllers\Auth\AdminAuthController;
+use App\Http\Controllers\Auth\AdminAuthController;
 
 // La page de retour après paiement
 Route::get('/payment/success/{reference}', [PaymentController::class, 'success'])->name('payment.success');
