@@ -43,6 +43,7 @@ return [
 
     'lomopay' => [
         'secret_key' => env('LOMOPAY_SECRET_KEY'),
+        'public_key'=> env('LOMOPAY_PUBLIC_KEY'),
         'base_url' => env('LOMOPAY_BASE_URL', 'https://api.lomopay.net/v1'), // Ajuste l'URL si besoin selon leur doc
     ],
 

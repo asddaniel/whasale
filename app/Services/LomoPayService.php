@@ -14,6 +14,7 @@ class LomoPayService
     public function __construct()
     {
         $this->secretKey = config('services.lomopay.secret_key');
+        $this->publicKey = config('services.lomopay.public_key');
         $this->baseUrl = config('services.lomopay.base_url', 'https://api.lomopay.net/v1'); // Vérifie l'URL de base exacte
     }
 
@@ -21,9 +22,11 @@ class LomoPayService
     {
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->secretKey,
+            'X-Public-Key'=>$this->publicKey,
+            'X-Secret-Key'=>$this->secretKey,
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ])->post($this->baseUrl . '/payments', [
+        ])->post($this->baseUrl . '/payments.php', [
             'amount' => $payload['amount'],
             'currency' => $payload['currency'] ?? 'CDF',
             'reference' => $payload['reference'],
@@ -44,6 +47,8 @@ class LomoPayService
     {
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->secretKey,
+            'X-Public-Key'=>$this->publicKey,
+            'X-Secret-Key'=>$this->secretKey,
             'Accept' => 'application/json',
         ])->get($this->baseUrl . "/payments/verify/{$reference}");
 
