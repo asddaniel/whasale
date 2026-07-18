@@ -272,7 +272,7 @@ class WhatsappController extends Controller
                 break;
 
             case 'CHECK_PAYMENT':
-                $transaction = Transaction::where('customer_id', $customer->id)->where('status', 'pending')->latest()->first();
+                $transaction = Transaction::where('customer_id', $customer->id)->latest()->first();
                 if (!$transaction) {
                     $this->sendWhatsappMessage($customer->phone, "Je ne trouve aucune transaction en attente pour vous.");
                     return;
