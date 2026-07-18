@@ -280,8 +280,8 @@ class WhatsappController extends Controller
                 }
 
                 try {
-                    $statusData = $this->lomoPayService->verifyTransaction($transaction->reference);
-                    if (isset($statusData['status']) && strtolower($statusData['status']) === 'success') {
+                   // $statusData = $this->lomoPayService->verifyTransaction($transaction->reference);
+                    if ($transaction->status === 'success') {
                         $transaction->update(['status' => 'success']);
 
                         $document = $transaction->document;
