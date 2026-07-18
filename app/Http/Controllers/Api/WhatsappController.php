@@ -254,7 +254,7 @@ class WhatsappController extends Controller
                     Transaction::create([
                         'customer_id' => $customer->id,
                         'document_id' => $document->id,
-                        'reference' => $reference,
+                        'reference' => $paymentData['data']['id'],
                         'amount' => $document->price,
                         'currency' => $document->currency,
                         'payment_url' => $paymentData['data']['checkout_url'] ?? '',

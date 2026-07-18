@@ -28,8 +28,8 @@ class LomoPayWebhookController extends Controller
         Log::info('Webhook LomoPay reçu : ', $data);
 
         // Selon la doc LomoPay, on récupère la référence
-        $reference = $data['reference'] ?? null;
-        $status = $data['status'] ?? null;
+        $reference = $data['data']['transaction_id'] ?? null;
+        $status = $data['data']['status'] ?? null;
 
         if (!$reference || !$status) {
             return response()->json(['message' => 'Payload invalide'], 400);
@@ -65,7 +65,7 @@ class LomoPayWebhookController extends Controller
                 $this->sendWhatsappMessage($customer->phone, $message);
 
             } catch (Exception $e) {
-                Log::error("Erreur post-paiement Webhook: " . $e->getMessage());
+                Log::error("Erreur de post-paiement Webhook: " . $e->getMessage());
             }
         } elseif (strtolower($status) === 'failed') {
             $transaction->update(['status' => 'failed']);
