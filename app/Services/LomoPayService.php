@@ -23,7 +23,7 @@ class LomoPayService
             'Authorization' => 'Bearer ' . $this->secretKey,
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ])->post($this->baseUrl . '/payments/initialize', [
+        ])->post($this->baseUrl . '/payments', [
             'amount' => $payload['amount'],
             'currency' => $payload['currency'] ?? 'CDF',
             'reference' => $payload['reference'],

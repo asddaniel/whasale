@@ -264,6 +264,8 @@ class WhatsappController extends Controller
                     $this->sendWhatsappMessage($customer->phone, $messageToUser);
 
                 } catch (Exception $e) {
+                    Log::alert($e);
+                    Log::error($e);
                     $this->sendWhatsappMessage($customer->phone, "Impossible de générer le lien de paiement pour le moment. Réessayez plus tard.");
                 }
                 break;
