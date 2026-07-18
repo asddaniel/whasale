@@ -257,11 +257,11 @@ class WhatsappController extends Controller
                         'reference' => $reference,
                         'amount' => $document->price,
                         'currency' => $document->currency,
-                        'payment_url' => $paymentData['payment_url'] ?? '',
+                        'payment_url' => $paymentData['data']['checkout_url'] ?? '',
                         'status' => 'pending',
                     ]);
 
-                    $messageToUser = $replyText . "\n\n🔗 *Lien de paiement* :\n" . ($paymentData['payment_url'] ?? '') . "\n\n_Une fois le paiement effectué, écrivez-moi « J'ai payé »._";
+                    $messageToUser = $replyText . "\n\n🔗 *Lien de paiement* :\n" . ($paymentData['data']['checkout_url'] ?? '') . "\n\n_Une fois le paiement effectué, écrivez-moi « J'ai payé »._";
                     $this->sendWhatsappMessage($customer->phone, $messageToUser);
 
                 } catch (Exception $e) {
