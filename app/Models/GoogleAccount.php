@@ -12,14 +12,13 @@ class GoogleAccount extends Model
 
     protected $fillable = [
         'email',
-        'refresh_token',
-        'access_token',
-        'expires_at',
+        'service_account_json', // On remplace les anciens jetons par le JSON complet
         'is_active',
     ];
 
     protected $casts = [
-        'expires_at' => 'datetime',
+        // Chiffrement automatique en base de données pour protéger vos clés privées Google !
+        'service_account_json' => 'encrypted:array',
         'is_active' => 'boolean',
     ];
 

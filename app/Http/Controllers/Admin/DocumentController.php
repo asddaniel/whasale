@@ -15,14 +15,14 @@ class DocumentController extends Controller
     public function index()
     {
         $documents = Document::with('googleAccount')->get();
+        // On récupère uniquement les comptes de service actifs
         $googleAccounts = GoogleAccount::where('is_active', true)->get();
 
-        // Tu vas créer une vue Blade pour ça plus tard (Etape 4/5)
         return view('admin.documents.index', compact('documents', 'googleAccounts'));
     }
 
     /**
-     * Enregistre un nouveau document (Lien Drive)
+     * Enregistre un nouveau document (Lien Drive) associé à un compte de service spécifique
      */
     public function store(Request $request)
     {
