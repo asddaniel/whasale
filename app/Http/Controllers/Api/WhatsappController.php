@@ -249,6 +249,7 @@ class WhatsappController extends Controller
                         'reference' => $reference,
                         'description' => "Achat du document: " . $document->title,
                     ]);
+                    Log::alert($paymentData);
 
                     Transaction::create([
                         'customer_id' => $customer->id,
