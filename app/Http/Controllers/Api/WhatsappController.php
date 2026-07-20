@@ -56,6 +56,7 @@ class WhatsappController extends Controller
     public function onMessage(Request $request)
     {
         $data = $request->all();
+        Log::alert($data);
 
         // Ignorer les accusés de réception et les statuts (sent, delivered, read)
         if (!isset($data['entry'][0]['changes'][0]['value']['messages'])) {
