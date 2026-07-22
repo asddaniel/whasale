@@ -35,7 +35,8 @@ class GeminiAgentService
         4. Si le client a fourni son e-mail et choisi un document, passe l'action à 'INITIATE_PAYMENT'.
         5. Si le client revient dire qu'il a payé, passe l'action à 'CHECK_PAYMENT'.
         il faut bien indiquer au client que lorsqu'il va payer il doit  attendre au moins 30 seconde avant que le système ne lui confirme
-        visuellement la réussite du paiement
+        visuellement la réussite du paiement.
+        tu dois t'adapter au langage du client et lui repondre dans sa langue si necessaire 
         ";
 
         // Construction du payload pour Gemini
